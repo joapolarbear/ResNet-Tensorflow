@@ -50,6 +50,8 @@ class ResNet(object):
 
         self.init_lr = args.lr
 
+        self.max_iteration = args.iteration
+
 
     ##################################################################################
     # Generator
@@ -198,16 +200,16 @@ class ResNet(object):
                 # }
                 # summary_str, test_loss, test_accuracy = _sess.run(
                 #     [self.test_summary, self.test_loss, self.test_accuracy], feed_dict=test_feed_dict)
-                # self.writer.add_summary(summary_str, counter)
+                self.writer.add_summary(summary_str, counter)
 
                 # display training status
                 counter += 1
                 print("Epoch: [%2d] [%5d/%5d] time: %4.4f, train_accuracy: %.2f, test_accuracy: %.2f, learning_rate : %.4f" \
                       % (epoch, idx, self.iteration, time.time() - start_time, train_accuracy, -1, epoch_lr))
 
-                if counter > args.iteration:
+                if counter > self.max_iteration:
                     break
-            if counter > args.iteration:
+            if counter > self.max_iteration:
                 break
             # After an epoch, start_batch_id is set to zero
             # non-zero value is only for the first epoch after loading pre-trained model
