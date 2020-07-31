@@ -216,19 +216,10 @@ class ResNet(object):
     def test(self):
         tf.global_variables_initializer().run()
 
-        self.saver = tf.train.Saver()
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-
-        if could_load:
-            print(" [*] Load SUCCESS")
-        else:
-            print(" [!] Load failed...")
-
         test_feed_dict = {
             self.test_inptus: self.test_x,
             self.test_labels: self.test_y
         }
-
 
         test_accuracy = self.sess.run(self.test_accuracy, feed_dict=test_feed_dict)
         print("test_accuracy: {}".format(test_accuracy))
