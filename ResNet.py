@@ -131,8 +131,14 @@ class ResNet(object):
 
 
         """ Training """
-        self.optim = tf.train.MomentumOptimizer(self.lr, momentum=0.9).minimize(self.train_loss)
+        lr_scaler = hvd.size()
+        self.optim = tf.train.AdamOptimizer(0.001 * lr_scaler, epsilon=1e-8)
+        # self.optim = tf.train.MomentumOptimizer(self.lr, momentum=0.9).minimize(self.train_loss)
         self.optim = hvd.DistributedOptimizer(self.optim, op=hvd.Average)
+
+        gradients = self.optim.compute_gradients(self.train_loss)
+        global_step = tf.train.get_or_create_global_step()
+        self.train_op = self.optim.apply_gradients(gradients, global_step=global_step)
 
         """" Summary """
         self.summary_train_loss = tf.summary.scalar("train_loss", self.train_loss)
@@ -205,7 +211,7 @@ class ResNet(object):
 
                 # update network
                 _, summary_str, train_loss, train_accuracy = self.sess.run(
-                    [self.optim, self.train_summary, self.train_loss, self.train_accuracy], feed_dict=train_feed_dict)
+                    [self.train_op, self.train_summary, self.train_loss, self.train_accuracy], feed_dict=train_feed_dict)
                 self.writer.add_summary(summary_str, counter)
 
                 # test

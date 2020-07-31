@@ -156,8 +156,12 @@ def main():
     if args is None:
       exit()
 
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    config.gpu_options.visible_device_list = str(hvd.local_rank())
+    
     # open session
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    with tf.Session(config=config) as sess:
         sess = TimelineSession(sess)
         cnn = ResNet(sess, args)
 
