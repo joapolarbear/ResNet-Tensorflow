@@ -1,6 +1,7 @@
 import time
 from ops import *
 from utils import *
+import horovod.tensorflow as hvd
 
 class ResNet(object):
     def __init__(self, sess, args):
@@ -131,6 +132,7 @@ class ResNet(object):
 
         """ Training """
         self.optim = tf.train.MomentumOptimizer(self.lr, momentum=0.9).minimize(self.train_loss)
+        self.optim = hvd.DistributedOptimizer(self.optim, op=hvd.Average)
 
         """" Summary """
         self.summary_train_loss = tf.summary.scalar("train_loss", self.train_loss)
