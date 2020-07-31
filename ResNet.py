@@ -158,31 +158,13 @@ class ResNet(object):
         # initialize all variables
         tf.global_variables_initializer().run()
 
-        # saver to save model
-        self.saver = tf.train.Saver()
-
         # summary writer
         self.writer = tf.summary.FileWriter(self.log_dir + '/' + self.model_dir, self.sess.graph)
 
-        # restore check-point if it exits
-        could_load, checkpoint_counter = self.load(self.checkpoint_dir)
-        if could_load:
-            epoch_lr = self.init_lr
-            start_epoch = (int)(checkpoint_counter / self.iteration)
-            start_batch_id = checkpoint_counter - start_epoch * self.iteration
-            counter = checkpoint_counter
-
-            if start_epoch >= int(self.epoch * 0.75) :
-                epoch_lr = epoch_lr * 0.01
-            elif start_epoch >= int(self.epoch * 0.5) and start_epoch < int(self.epoch * 0.75) :
-                epoch_lr = epoch_lr * 0.1
-            print(" [*] Load SUCCESS")
-        else:
-            epoch_lr = self.init_lr
-            start_epoch = 0
-            start_batch_id = 0
-            counter = 1
-            print(" [!] Load failed...")
+        epoch_lr = self.init_lr
+        start_epoch = 0
+        start_batch_id = 0
+        counter = 1
 
         # loop for epoch
         start_time = time.time()
@@ -203,21 +185,19 @@ class ResNet(object):
                     self.lr : epoch_lr
                 }
 
-                test_feed_dict = {
-                    self.test_inptus : self.test_x,
-                    self.test_labels : self.test_y
-                }
-
-
                 # update network
                 _, summary_str, train_loss, train_accuracy = self.sess.run(
                     [self.train_op, self.train_summary, self.train_loss, self.train_accuracy], feed_dict=train_feed_dict)
                 self.writer.add_summary(summary_str, counter)
 
-                # test
-                summary_str, test_loss, test_accuracy = self.sess.run(
-                    [self.test_summary, self.test_loss, self.test_accuracy], feed_dict=test_feed_dict)
-                self.writer.add_summary(summary_str, counter)
+                # # test
+                # test_feed_dict = {
+                #     self.test_inptus : self.test_x,
+                #     self.test_labels : self.test_y
+                # }
+                # summary_str, test_loss, test_accuracy = self.sess.run(
+                #     [self.test_summary, self.test_loss, self.test_accuracy], feed_dict=test_feed_dict)
+                # self.writer.add_summary(summary_str, counter)
 
                 # display training status
                 counter += 1
@@ -228,38 +208,10 @@ class ResNet(object):
             # non-zero value is only for the first epoch after loading pre-trained model
             start_batch_id = 0
 
-            # save model
-            self.save(self.checkpoint_dir, counter)
-
-        # save model for final step
-        self.save(self.checkpoint_dir, counter)
 
     @property
     def model_dir(self):
         return "{}{}_{}_{}_{}".format(self.model_name, self.res_n, self.dataset_name, self.batch_size, self.init_lr)
-
-    def save(self, checkpoint_dir, step):
-        checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-
-        self.saver.save(self.sess, os.path.join(checkpoint_dir, self.model_name+'.model'), global_step=step)
-
-    def load(self, checkpoint_dir):
-        print(" [*] Reading checkpoints...")
-        checkpoint_dir = os.path.join(checkpoint_dir, self.model_dir)
-
-        ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
-        if ckpt and ckpt.model_checkpoint_path:
-            ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-            self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-            counter = int(ckpt_name.split('-')[-1])
-            print(" [*] Success to read {}".format(ckpt_name))
-            return True, counter
-        else:
-            print(" [*] Failed to find a checkpoint")
-            return False, 0
 
     def test(self):
         tf.global_variables_initializer().run()
