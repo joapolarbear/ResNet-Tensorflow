@@ -156,6 +156,12 @@ def main():
     if args is None:
       exit()
 
+    cnn = ResNet(args)
+    # build graph
+    cnn.build_model()
+    # show network architecture
+    show_all_variables()
+
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     config.gpu_options.visible_device_list = str(hvd.local_rank())
@@ -163,25 +169,18 @@ def main():
     # open session
     with tf.Session(config=config) as sess:
         sess = TimelineSession(sess)
-        cnn = ResNet(sess, args)
-
-        # build graph
-        cnn.build_model()
-
-        # show network architecture
-        show_all_variables()
 
         if args.phase == 'train' :
             # launch the graph in a session
-            cnn.train()
+            cnn.train(sess)
 
             print(" [*] Training finished! \n")
 
-            cnn.test()
+            cnn.test(sess)
             print(" [*] Test finished!")
 
         if args.phase == 'test' :
-            cnn.test()
+            cnn.test(sess)
             print(" [*] Test finished!")
 
 if __name__ == '__main__':

@@ -4,9 +4,8 @@ from utils import *
 import horovod.tensorflow as hvd
 
 class ResNet(object):
-    def __init__(self, sess, args):
+    def __init__(self, args):
         self.model_name = 'ResNet'
-        self.sess = sess
         self.dataset_name = args.dataset
 
         if self.dataset_name == 'cifar10' :
@@ -134,6 +133,8 @@ class ResNet(object):
         lr_scaler = hvd.size()
         self.optim = tf.train.AdamOptimizer(0.001 * lr_scaler, epsilon=1e-8)
         # self.optim = tf.train.MomentumOptimizer(self.lr, momentum=0.9).minimize(self.train_loss)
+        # auto mixed precision training
+        self.optim = tf.train.experimental.enable_mixed_precision_graph_rewrite(self.optim)
         self.optim = hvd.DistributedOptimizer(self.optim, op=hvd.Average)
 
         gradients = self.optim.compute_gradients(self.train_loss)
@@ -154,12 +155,12 @@ class ResNet(object):
     # Train
     ##################################################################################
 
-    def train(self):
+    def train(self, _sess):
         # initialize all variables
         tf.global_variables_initializer().run()
 
         # summary writer
-        self.writer = tf.summary.FileWriter(self.log_dir + '/' + self.model_dir, self.sess.graph)
+        self.writer = tf.summary.FileWriter(self.log_dir + '/' + self.model_dir, _sess.graph)
 
         epoch_lr = self.init_lr
         start_epoch = 0
@@ -186,7 +187,7 @@ class ResNet(object):
                 }
 
                 # update network
-                _, summary_str, train_loss, train_accuracy = self.sess.run(
+                _, summary_str, train_loss, train_accuracy = _sess.run(
                     [self.train_op, self.train_summary, self.train_loss, self.train_accuracy], feed_dict=train_feed_dict)
                 self.writer.add_summary(summary_str, counter)
 
@@ -195,7 +196,7 @@ class ResNet(object):
                 #     self.test_inptus : self.test_x,
                 #     self.test_labels : self.test_y
                 # }
-                # summary_str, test_loss, test_accuracy = self.sess.run(
+                # summary_str, test_loss, test_accuracy = _sess.run(
                 #     [self.test_summary, self.test_loss, self.test_accuracy], feed_dict=test_feed_dict)
                 # self.writer.add_summary(summary_str, counter)
 
@@ -210,7 +211,7 @@ class ResNet(object):
 
 
     @property
-    def model_dir(self):
+    def model_dir(self, _sess):
         return "{}{}_{}_{}_{}".format(self.model_name, self.res_n, self.dataset_name, self.batch_size, self.init_lr)
 
     def test(self):
@@ -221,5 +222,5 @@ class ResNet(object):
             self.test_labels: self.test_y
         }
 
-        test_accuracy = self.sess.run(self.test_accuracy, feed_dict=test_feed_dict)
+        test_accuracy = _sess.run(self.test_accuracy, feed_dict=test_feed_dict)
         print("test_accuracy: {}".format(test_accuracy))
