@@ -109,7 +109,7 @@ def parse_args():
     desc = "Tensorflow implementation of ResNet"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--phase', type=str, default='train', help='train or test ?')
-    parser.add_argument('--dataset', type=str, default='tiny', help='[cifar10, cifar100, mnist, fashion-mnist, tiny')
+    parser.add_argument('--dataset', type=str, default='cifar10', help='[cifar10, cifar100, mnist, fashion-mnist, tiny')
 
 
     parser.add_argument('--epoch', type=int, default=1, help='The number of epochs to run')

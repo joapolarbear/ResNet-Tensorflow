@@ -202,7 +202,7 @@ class ResNet(object):
                 # display training status
                 counter += 1
                 print("Epoch: [%2d] [%5d/%5d] time: %4.4f, train_accuracy: %.2f, test_accuracy: %.2f, learning_rate : %.4f" \
-                      % (epoch, idx, self.iteration, time.time() - start_time, train_accuracy, test_accuracy, epoch_lr))
+                      % (epoch, idx, self.iteration, time.time() - start_time, train_accuracy, -1, epoch_lr))
 
             # After an epoch, start_batch_id is set to zero
             # non-zero value is only for the first epoch after loading pre-trained model
