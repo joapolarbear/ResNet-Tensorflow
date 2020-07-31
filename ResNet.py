@@ -51,6 +51,7 @@ class ResNet(object):
         self.init_lr = args.lr
 
         self.max_iteration = args.iteration
+        self.amp = args.amp
 
 
     ##################################################################################
@@ -136,7 +137,8 @@ class ResNet(object):
         self.optim = tf.train.AdamOptimizer(0.001 * lr_scaler, epsilon=1e-8)
         # self.optim = tf.train.MomentumOptimizer(self.lr, momentum=0.9).minimize(self.train_loss)
         # auto mixed precision training
-        self.optim = tf.train.experimental.enable_mixed_precision_graph_rewrite(self.optim)
+        if self.amp:
+            self.optim = tf.train.experimental.enable_mixed_precision_graph_rewrite(self.optim)
         self.optim = hvd.DistributedOptimizer(self.optim, op=hvd.Average)
 
         gradients = self.optim.compute_gradients(self.train_loss)

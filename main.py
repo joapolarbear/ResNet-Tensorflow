@@ -123,6 +123,7 @@ def parse_args():
                         help='Directory name to save the checkpoints')
     parser.add_argument('--log_dir', type=str, default='logs',
                         help='Directory name to save training logs')
+    parser.add_argument('--amp', action='store_true', help='amp')
 
     return check_args(parser.parse_args())
 
