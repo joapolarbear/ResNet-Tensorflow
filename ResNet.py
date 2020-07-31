@@ -205,16 +205,20 @@ class ResNet(object):
                 print("Epoch: [%2d] [%5d/%5d] time: %4.4f, train_accuracy: %.2f, test_accuracy: %.2f, learning_rate : %.4f" \
                       % (epoch, idx, self.iteration, time.time() - start_time, train_accuracy, -1, epoch_lr))
 
+                if counter > args.iteration:
+                    break
+            if counter > args.iteration:
+                break
             # After an epoch, start_batch_id is set to zero
             # non-zero value is only for the first epoch after loading pre-trained model
             start_batch_id = 0
 
 
     @property
-    def model_dir(self, _sess):
+    def model_dir(self):
         return "{}{}_{}_{}_{}".format(self.model_name, self.res_n, self.dataset_name, self.batch_size, self.init_lr)
 
-    def test(self):
+    def test(self, _sess):
         tf.global_variables_initializer().run()
 
         test_feed_dict = {
