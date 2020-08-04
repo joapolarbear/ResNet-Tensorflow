@@ -173,7 +173,8 @@ class ResNet(object):
 
         # loop for epoch
         start_time = time.time()
-        for epoch in range(start_epoch, self.epoch):
+        epoch = 0
+        while True:
             if epoch == int(self.epoch * 0.5) or epoch == int(self.epoch * 0.75) :
                 epoch_lr = epoch_lr * 0.1
 
@@ -213,6 +214,7 @@ class ResNet(object):
                     break
             if counter > self.max_iteration:
                 break
+            epoch += 1
             # After an epoch, start_batch_id is set to zero
             # non-zero value is only for the first epoch after loading pre-trained model
             start_batch_id = 0
