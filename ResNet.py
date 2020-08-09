@@ -38,6 +38,15 @@ class ResNet(object):
             self.c_dim = 3
             self.label_dim = 200
 
+        if self.dataset_name == 'imagenet' :
+            self.img_size = 224
+            self.c_dim = 3
+            self.label_dim = 1000
+            self.train_x = np.array([1]*args.batch_size*self.img_size*self.img_size*self.c_dim).reshape((-1, self.img_size, self.img_size, self.c_dim))
+            self.train_y = np.array([1]*args.batch_size*self.label_dim).reshape((-1, self.label_dim))
+            self.test_x = self.train_x
+            self.test_y = self.train_y
+
 
         self.checkpoint_dir = args.checkpoint_dir
         self.log_dir = args.log_dir
@@ -115,22 +124,15 @@ class ResNet(object):
         self.train_inptus = tf.placeholder(tf.float32, [self.batch_size, self.img_size, self.img_size, self.c_dim], name='train_inputs')
         self.train_labels = tf.placeholder(tf.float32, [self.batch_size, self.label_dim], name='train_labels')
 
-        self.test_inptus = tf.placeholder(tf.float32, [len(self.test_x), self.img_size, self.img_size, self.c_dim], name='test_inputs')
-        self.test_labels = tf.placeholder(tf.float32, [len(self.test_y), self.label_dim], name='test_labels')
-
         self.lr = tf.placeholder(tf.float32, name='learning_rate')
 
         """ Model """
         self.train_logits = self.network(self.train_inptus)
-        self.test_logits = self.network(self.test_inptus, is_training=False, reuse=True)
 
         self.train_loss, self.train_accuracy = classification_loss(logit=self.train_logits, label=self.train_labels)
-        self.test_loss, self.test_accuracy = classification_loss(logit=self.test_logits, label=self.test_labels)
-        
+
         reg_loss = tf.losses.get_regularization_loss()
         self.train_loss += reg_loss
-        self.test_loss += reg_loss
-
 
         """ Training """
         lr_scaler = hvd.size()
@@ -148,12 +150,7 @@ class ResNet(object):
         """" Summary """
         self.summary_train_loss = tf.summary.scalar("train_loss", self.train_loss)
         self.summary_train_accuracy = tf.summary.scalar("train_accuracy", self.train_accuracy)
-
-        self.summary_test_loss = tf.summary.scalar("test_loss", self.test_loss)
-        self.summary_test_accuracy = tf.summary.scalar("test_accuracy", self.test_accuracy)
-
         self.train_summary = tf.summary.merge([self.summary_train_loss, self.summary_train_accuracy])
-        self.test_summary = tf.summary.merge([self.summary_test_loss, self.summary_test_accuracy])
 
     ##################################################################################
     # Train
@@ -196,13 +193,6 @@ class ResNet(object):
                     [self.train_op, self.train_summary, self.train_loss, self.train_accuracy], feed_dict=train_feed_dict)
                 self.writer.add_summary(summary_str, counter)
 
-                # # test
-                # test_feed_dict = {
-                #     self.test_inptus : self.test_x,
-                #     self.test_labels : self.test_y
-                # }
-                # summary_str, test_loss, test_accuracy = _sess.run(
-                #     [self.test_summary, self.test_loss, self.test_accuracy], feed_dict=test_feed_dict)
                 self.writer.add_summary(summary_str, counter)
 
                 # display training status
@@ -218,19 +208,9 @@ class ResNet(object):
             # After an epoch, start_batch_id is set to zero
             # non-zero value is only for the first epoch after loading pre-trained model
             start_batch_id = 0
+        print("Training speed: {} img/s".format(self.max_iteration * self.batch_size / (time.time() - start_time)))
 
 
     @property
     def model_dir(self):
         return "{}{}_{}_{}_{}".format(self.model_name, self.res_n, self.dataset_name, self.batch_size, self.init_lr)
-
-    def test(self, _sess):
-        tf.global_variables_initializer().run()
-
-        test_feed_dict = {
-            self.test_inptus: self.test_x,
-            self.test_labels: self.test_y
-        }
-
-        test_accuracy = _sess.run(self.test_accuracy, feed_dict=test_feed_dict)
-        print("test_accuracy: {}".format(test_accuracy))
