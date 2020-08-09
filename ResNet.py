@@ -209,6 +209,9 @@ class ResNet(object):
             # non-zero value is only for the first epoch after loading pre-trained model
             start_batch_id = 0
         print("Training speed: {} img/s".format(self.max_iteration * self.batch_size / (time.time() - start_time)))
+        with open(os.path.join("/root/traces/", "log.txt"), "a") as f:
+            f.write("res_n: {}, batch size: {}, data set: {}, fp16: {}\n".format(self.res_n, self.batch_size, self.dataset_name, "True" if self.amp else "False"))
+            f.write("Training speed: {} img/s\n".format(self.max_iteration * self.batch_size / (time.time() - start_time)))
 
 
     @property
