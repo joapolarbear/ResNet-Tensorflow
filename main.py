@@ -54,14 +54,16 @@ def main():
     # build graph
     cnn.build_model()
     # show network architecture
-    # show_all_variables()
+    show_all_variables()
 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     config.gpu_options.visible_device_list = str(hvd.local_rank())
 
-    # open session
-    with tf.Session(config=config) as sess:
+
+    hooks = [hvd.TimelineHook()]
+
+    with tf.train.MonitoredTrainingSession(config=config, hooks=hooks) as sess:
         sess = hvd.TimelineSession(sess)
 
         if args.phase == 'train' :
